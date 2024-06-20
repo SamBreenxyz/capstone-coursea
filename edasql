@@ -1,0 +1,278 @@
+Assignment: SQL Notebook for Peer Assignment
+Estimated time needed: 60 minutes.
+has been copied from my lab as cannnot save due to error 403 and when downloading doesnt download uptodate code 
+Introduction
+Using this Python notebook you will:
+
+Understand the Spacex DataSet
+Load the dataset into the corresponding table in a Db2 database
+Execute SQL queries to answer assignment questions
+Overview of the DataSet
+SpaceX has gained worldwide attention for a series of historic milestones.
+
+It is the only private company ever to return a spacecraft from low-earth orbit, which it first accomplished in December 2010. SpaceX advertises Falcon 9 rocket launches on its website with a cost of 62 million dollars wheras other providers cost upward of 165 million dollars each, much of the savings is because Space X can reuse the first stage.
+
+Therefore if we can determine if the first stage will land, we can determine the cost of a launch.
+
+This information can be used if an alternate company wants to bid against SpaceX for a rocket launch.
+
+This dataset includes a record for each payload carried during a SpaceX mission into outer space.
+
+Download the datasets
+This assignment requires you to load the spacex dataset.
+
+In many cases the dataset to be analyzed is available as a .CSV (comma separated values) file, perhaps on the internet. Click on the link below to download and save the dataset (.CSV file):
+
+Spacex DataSet
+
+!pip install sqlalchemy==1.3.9
+​
+Collecting sqlalchemy==1.3.9
+  Downloading SQLAlchemy-1.3.9.tar.gz (6.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.0/6.0 MB 71.9 MB/s eta 0:00:00:00:010:01
+  Preparing metadata (setup.py) ... done
+Building wheels for collected packages: sqlalchemy
+  Building wheel for sqlalchemy (setup.py) ... done
+  Created wheel for sqlalchemy: filename=SQLAlchemy-1.3.9-cp37-cp37m-linux_x86_64.whl size=1159121 sha256=a10b5f07cd0e79323eb2028e00476af0cdd5e070b673c73e530326cf9fd2dd4c
+  Stored in directory: /home/jupyterlab/.cache/pip/wheels/03/71/13/010faf12246f72dc76b4150e6e599d13a85b4435e06fb9e51f
+Successfully built sqlalchemy
+Installing collected packages: sqlalchemy
+  Attempting uninstall: sqlalchemy
+    Found existing installation: SQLAlchemy 1.3.24
+    Uninstalling SQLAlchemy-1.3.24:
+      Successfully uninstalled SQLAlchemy-1.3.24
+Successfully installed sqlalchemy-1.3.9
+Connect to the database
+Let us first load the SQL extension and establish a connection with the database
+
+#Please uncomment and execute the code below if you are working locally.
+​
+#!pip install ipython-sql
+%load_ext sql
+import csv, sqlite3
+​
+con = sqlite3.connect("my_data1.db")
+cur = con.cursor()
+!pip install -q pandas==1.1.5
+%sql sqlite:///my_data1.db
+'Connected: @my_data1.db'
+import pandas as pd
+df = pd.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBM-DS0321EN-SkillsNetwork/labs/module_2/data/Spacex.csv")
+df.to_sql("SPACEXTBL", con, if_exists='replace', index=False,method="multi")
+/home/jupyterlab/conda/envs/python/lib/python3.7/site-packages/pandas/core/generic.py:2882: UserWarning: The spaces in these column names will not be changed. In pandas versions < 0.14, spaces were converted to underscores.
+  both result in 0.1234 being formatted as 0.12.
+Note:This below code is added to remove blank rows from table
+
+%sql create table SPACEXTABLE as select * from SPACEXTBL where Date is not null
+ * sqlite:///my_data1.db
+Done.
+[]
+Tasks
+Now write and execute SQL queries to solve the assignment tasks.
+
+Note: If the column names are in mixed case enclose it in double quotes For Example "Landing_Outcome"
+
+Task 1
+Display the names of the unique launch sites in the space mission
+import pandas as pd
+from sqlalchemy import create_engine
+​
+# Create SQLite engine and connect
+engine = create_engine('sqlite:///my_data1.db')
+​
+# Load data into the table
+df = pd.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBM-DS0321EN-SkillsNetwork/labs/module_2/data/Spacex.csv")
+df.to_sql("SPACEXTBL", engine, if_exists='replace', index=False)
+​
+# Create table without blank rows
+with engine.connect() as conn:
+    conn.execute('CREATE TABLE IF NOT EXISTS SPACEXTABLE AS SELECT * FROM SPACEXTBL WHERE Date IS NOT NULL')
+​
+with engine.connect() as conn:
+    result = conn.execute("SELECT DISTINCT Launch_Site FROM SPACEXTABLE")
+    unique_launch_sites = result.fetchall()
+​
+print("Unique Launch Sites:")
+for site in unique_launch_sites:
+    print(site[0])
+​
+Unique Launch Sites:
+CCAFS LC-40
+VAFB SLC-4E
+KSC LC-39A
+CCAFS SLC-40
+Task 2
+Display 5 records where launch sites begin with the string 'CCA'
+with engine.connect() as conn:
+    result = conn.execute("SELECT * FROM SPACEXTABLE WHERE Launch_Site LIKE 'CCA%' LIMIT 5")
+    launch_sites_cca = result.fetchall()
+​
+print("5 Records with Launch Sites Beginning with 'CCA':")
+for record in launch_sites_cca:
+    print(record)
+​
+5 Records with Launch Sites Beginning with 'CCA':
+('2010-06-04', '18:45:00', 'F9 v1.0  B0003', 'CCAFS LC-40', 'Dragon Spacecraft Qualification Unit', 0, 'LEO', 'SpaceX', 'Success', 'Failure (parachute)')
+('2010-12-08', '15:43:00', 'F9 v1.0  B0004', 'CCAFS LC-40', 'Dragon demo flight C1, two CubeSats, barrel of Brouere cheese', 0, 'LEO (ISS)', 'NASA (COTS) NRO', 'Success', 'Failure (parachute)')
+('2012-05-22', '7:44:00', 'F9 v1.0  B0005', 'CCAFS LC-40', 'Dragon demo flight C2', 525, 'LEO (ISS)', 'NASA (COTS)', 'Success', 'No attempt')
+('2012-10-08', '0:35:00', 'F9 v1.0  B0006', 'CCAFS LC-40', 'SpaceX CRS-1', 500, 'LEO (ISS)', 'NASA (CRS)', 'Success', 'No attempt')
+('2013-03-01', '15:10:00', 'F9 v1.0  B0007', 'CCAFS LC-40', 'SpaceX CRS-2', 677, 'LEO (ISS)', 'NASA (CRS)', 'Success', 'No attempt')
+Task 3
+Display the total payload mass carried by boosters launched by NASA (CRS)
+with engine.connect() as conn:
+    result = conn.execute("SELECT SUM(PAYLOAD_MASS__KG_) FROM SPACEXTABLE WHERE Customer LIKE '%NASA%' AND Payload LIKE '%CRS%'")
+    total_payload_nasa_crs = result.scalar()
+​
+print("Total Payload Mass by NASA (CRS):", total_payload_nasa_crs)
+​
+Total Payload Mass by NASA (CRS): 60268
+Task 4
+Display average payload mass carried by booster version F9 v1.1
+with engine.connect() as conn:
+    result = conn.execute("SELECT AVG(PAYLOAD_MASS__KG_) FROM SPACEXTABLE WHERE Booster_Version = 'F9 v1.1'")
+    avg_payload_f9_v1_1 = result.scalar()
+​
+print("Average Payload Mass for Booster Version F9 v1.1:", avg_payload_f9_v1_1)
+​
+Average Payload Mass for Booster Version F9 v1.1: 2928.4
+Task 5
+List the date when the first succesful landing outcome in ground pad was acheived.
+Hint:Use min function
+
+with engine.connect() as conn:
+    result = conn.execute("SELECT MIN(Date) FROM SPACEXTABLE WHERE Landing_Outcome LIKE 'Success (ground pad)%'")
+    first_successful_landing_ground_pad = result.scalar()
+​
+print("First Successful Landing on Ground Pad Date:", first_successful_landing_ground_pad)
+​
+First Successful Landing on Ground Pad Date: 2015-12-22
+Task 6
+List the names of the boosters which have success in drone ship and have payload mass greater than 4000 but less than 6000
+with engine.connect() as conn:
+    result = conn.execute("""
+    SELECT DISTINCT Booster_Version 
+    FROM SPACEXTABLE 
+    WHERE Landing_Outcome = 'Success (drone ship)' 
+    AND PAYLOAD_MASS__KG_ > 4000 
+    AND PAYLOAD_MASS__KG_ < 6000
+    """)
+    boosters_success_drone_ship = result.fetchall()
+​
+print("Boosters with Success in Drone Ship and Payload Mass between 4000 and 6000:")
+for booster in boosters_success_drone_ship:
+    print(booster[0])
+​
+Boosters with Success in Drone Ship and Payload Mass between 4000 and 6000:
+F9 FT B1022
+F9 FT B1026
+F9 FT  B1021.2
+F9 FT  B1031.2
+Task 7
+List the total number of successful and failure mission outcomes
+with engine.connect() as conn:
+    result = conn.execute("SELECT Mission_Outcome, COUNT(*) FROM SPACEXTABLE GROUP BY Mission_Outcome")
+    mission_outcomes_count = result.fetchall()
+​
+print("Total Number of Successful and Failure Mission Outcomes:")
+for outcome, count in mission_outcomes_count:
+    print(outcome, count)
+​
+Total Number of Successful and Failure Mission Outcomes:
+Failure (in flight) 1
+Success 98
+Success  1
+Success (payload status unclear) 1
+Task 8
+List the names of the booster_versions which have carried the maximum payload mass. Use a subquery
+with engine.connect() as conn:
+    result = conn.execute("""
+    SELECT Booster_Version 
+    FROM SPACEXTABLE 
+    WHERE PAYLOAD_MASS__KG_ = (SELECT MAX(PAYLOAD_MASS__KG_) FROM SPACEXTABLE)
+    """)
+    booster_versions_max_payload = result.fetchall()
+​
+print("Booster Versions with Maximum Payload Mass:")
+for booster in booster_versions_max_payload:
+    print(booster[0])
+​
+Booster Versions with Maximum Payload Mass:
+F9 B5 B1048.4
+F9 B5 B1049.4
+F9 B5 B1051.3
+F9 B5 B1056.4
+F9 B5 B1048.5
+F9 B5 B1051.4
+F9 B5 B1049.5
+F9 B5 B1060.2 
+F9 B5 B1058.3 
+F9 B5 B1051.6
+F9 B5 B1060.3
+F9 B5 B1049.7 
+Task 9
+List the records which will display the month names, failure landing_outcomes in drone ship ,booster versions, launch_site for the months in year 2015.
+Note: SQLLite does not support monthnames. So you need to use substr(Date, 6,2) as month to get the months and substr(Date,0,5)='2015' for year.
+
+
+
+
+
+
+
+with engine.connect() as conn:
+    result = conn.execute("""
+    SELECT 
+        SUBSTR(Date, 6, 2) AS month, 
+        Landing_Outcome, 
+        Booster_Version, 
+        Launch_Site 
+    FROM SPACEXTABLE 
+    WHERE Landing_Outcome LIKE 'Failure (drone ship)%' 
+    AND SUBSTR(Date, 1, 4) = '2015'
+    """)
+    records_2015 = result.fetchall()
+​
+print("Records for Failure Landing Outcomes on Drone Ship in 2015:")
+for record in records_2015:
+    print(record)
+​
+Records for Failure Landing Outcomes on Drone Ship in 2015:
+('01', 'Failure (drone ship)', 'F9 v1.1 B1012', 'CCAFS LC-40')
+('04', 'Failure (drone ship)', 'F9 v1.1 B1015', 'CCAFS LC-40')
+Task 10
+Rank the count of landing outcomes (such as Failure (drone ship) or Success (ground pad)) between the date 2010-06-04 and 2017-03-20, in descending order.
+with engine.connect() as conn:
+    result = conn.execute("""
+    SELECT Landing_Outcome, COUNT(*) 
+    FROM SPACEXTABLE 
+    WHERE Date BETWEEN '2010-06-04' AND '2017-03-20' 
+    GROUP BY Landing_Outcome 
+    ORDER BY COUNT(*) DESC
+    """)
+    landing_outcomes_rank = result.fetchall()
+​
+print("Ranked Count of Landing Outcomes Between 2010-06-04 and 2017-03-20:")
+for outcome, count in landing_outcomes_rank:
+    print(outcome, count)
+​
+Reference Links
+Hands-on Lab : String Patterns, Sorting and Grouping
+
+Hands-on Lab: Built-in functions
+
+Hands-on Lab : Sub-queries and Nested SELECT Statements
+
+Hands-on Tutorial: Accessing Databases with SQL magic
+
+Hands-on Lab: Analyzing a real World Data Set
+
+Author(s)
+Lakshmi Holla 
+Other Contributors
+Rav Ahuja 
+Change log
+Date	Version	Changed by	Change Description
+2021-07-09	0.2	Lakshmi Holla	Changes made in magic sql
+2021-05-20	0.1	Lakshmi Holla	Created Initial Version
+© IBM Corporation 2021. All rights reserved. 
+
